@@ -1,5 +1,6 @@
 module.exports = {
-  publicPath: '/dashrev/',
+  publicPath: '/findash/',
+  outputDir: 'docs',
   devServer: {
     disableHostCheck: true,
   },

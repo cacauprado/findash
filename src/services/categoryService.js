@@ -69,7 +69,7 @@ class CategoryService {
   }
 
   /**
-   * ➕ Criar nova categoria
+   * ➡️ Criar nova categoria
    * @param {string} userId - ID do usuário
    * @param {Object} categoryData - Dados da categoria
    * @returns {Promise<Object>} Categoria criada com ID
@@ -118,7 +118,7 @@ class CategoryService {
   }
 
   /**
-   * ✏️ Atualizar categoria existente
+   * ✍️ Atualizar categoria existente
    * @param {string} categoryId - ID da categoria
    * @param {Object} categoryData - Novos dados
    * @returns {Promise<Object>} Categoria atualizada

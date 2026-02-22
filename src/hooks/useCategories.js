@@ -6,7 +6,7 @@ import { categoryService } from '@/services/categoryService';
 import { CategoriesContext } from '@/contexts/CategoriesContext';
 
 /**
- * 🐋 Hook para gerenciar categorias
+ * 🦦 Hook para gerenciar categorias
  * Fornece CRUD completo e acesso ao estado
  * 
  * @returns {Object} { categories, isLoading, error, createCategory, updateCategory, deleteCategory, reorderCategories, loadCategories, initializeDefaults }
@@ -40,7 +40,7 @@ export const useCategories = () => {
   }, [user?.uid, context]);
 
   /**
-   * ➕ Criar nova categoria
+   * ➡️ Criar nova categoria
    */
   const createCategory = useCallback(async (categoryData) => {
     if (!user?.uid) {
@@ -70,7 +70,7 @@ export const useCategories = () => {
   }, [user?.uid, context]);
 
   /**
-   * ✏️ Atualizar categoria existente
+   * ✍️ Atualizar categoria existente
    */
   const updateCategory = useCallback(async (categoryId, categoryData) => {
     try {

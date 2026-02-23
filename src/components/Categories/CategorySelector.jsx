@@ -1,34 +1,50 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, Search, X } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
-import * as LucideIcons from 'lucide-react';
-import { Search, ChevronDown } from 'lucide-react';
-import styles from './CategoryManager.module.css';
+import './CategorySelector.css';
 
-const CategorySelector = ({ 
-  value = null, 
-  onChange = null,
-  placeholder = 'Selecione uma categoria...',
-  searchable = true,
-  clearable = true 
-}) => {
+/**
+ * 🗳️ Selector dropdown para categorias
+ * Usado em formulários de transação
+ * @param {Object} props
+ * @param {string} props.value - ID da categoria selecionada
+ * @param {Function} props.onChange - Callback ao mudar
+ * @param {string} props.placeholder - Placeholder
+ * @param {boolean} props.disabled - Desabilitar
+ * @param {string} props.label - Label do campo
+ */
+export default function CategorySelector({
+  value,
+  onChange,
+  placeholder = 'Selecione uma categoria',
+  disabled = false,
+  label,
+}) {
   const { categories, isLoading } = useCategories();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Categoria selecionada
   const selectedCategory = categories.find(c => c.id === value);
-  
+
+  /**
+   * 🔍 Filtrar categorias por busca
+   */
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cat.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  /**
+   * 🔔 Fechar dropdown ao clicar fora
+   */
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
@@ -37,121 +53,150 @@ const CategorySelector = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (isOpen && searchable && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen, searchable]);
-
+  /**
+   * 📄 Selecionar categoria
+   */
   const handleSelect = (category) => {
-    onChange?.(category.id);
+    onChange?.(category);
     setIsOpen(false);
     setSearchTerm('');
   };
 
+  /**
+   * 🗘 Limpar seleção
+   */
   const handleClear = (e) => {
     e.stopPropagation();
     onChange?.(null);
     setSearchTerm('');
   };
 
-  const IconComponent = selectedCategory && LucideIcons[selectedCategory.icon];
+  /**
+   * ⌨️ Navegabilidade com teclado
+   */
+  const handleKeyDown = (e) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setIsOpen(true);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        setSearchTerm('');
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
-    <div className={styles.selectorContainer} ref={containerRef}>
+    <div className="category-selector-container" ref={containerRef}>
+      {label && (
+        <label className="category-selector-label">
+          {label}
+        </label>
+      )}
+
+      {/* Botão principal */}
       <button
         type="button"
-        className={`${styles.selectorButton} ${isOpen ? styles.active : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        disabled={isLoading}
+        disabled={disabled || isLoading}
+        className={`category-selector-button ${
+          selectedCategory ? 'has-value' : ''
+        } ${isOpen ? 'open' : ''}`}
+        onKeyDown={handleKeyDown}
+        ref={inputRef}
       >
-        {selectedCategory ? (
-          <div className={styles.selectedCategory}>
-            <div 
-              className={styles.selectedIcon}
-              style={{ color: selectedCategory.color }}
-            >
-              {IconComponent && <IconComponent size={20} />}
-            </div>
-            <span className={styles.selectedName}>{selectedCategory.name}</span>
-          </div>
-        ) : (
-          <span className={styles.placeholder}>{placeholder}</span>
-        )}
+        <div className="selector-button-content">
+          {selectedCategory ? (
+            <>
+              <div
+                className="selector-color"
+                style={{ backgroundColor: selectedCategory.color }}
+              />
+              <span className="selector-text">
+                {selectedCategory.name}
+              </span>
+            </>
+          ) : (
+            <span className="selector-placeholder">{placeholder}</span>
+          )}
+        </div>
 
-        <div className={styles.selectorControls}>
-          {clearable && selectedCategory && (
+        <div className="selector-icons">
+          {selectedCategory && !disabled && (
             <button
               type="button"
-              className={styles.clearBtn}
               onClick={handleClear}
-              title="Limpar seleção"
+              className="selector-clear"
+              aria-label="Limpar seleção"
             >
-              ×
+              <X size={16} />
             </button>
           )}
-          <ChevronDown 
-            size={20} 
-            className={`${styles.chevron} ${isOpen ? styles.open : ''}`}
+          <ChevronDown
+            size={18}
+            className={`selector-chevron ${isOpen ? 'open' : ''}`}
           />
         </div>
       </button>
 
+      {/* Dropdown */}
       {isOpen && (
-        <div className={styles.selectorDropdown}>
-          {searchable && (
-            <div className={styles.searchWrapper}>
-              <Search size={18} />
+        <div className="category-selector-dropdown">
+          {/* Busca */}
+          {categories.length > 5 && (
+            <div className="selector-search">
+              <Search size={16} />
               <input
-                ref={inputRef}
                 type="text"
                 placeholder="Buscar categoria..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={styles.searchInput}
+                autoFocus
               />
             </div>
           )}
 
-          <div className={styles.optionsContainer}>
+          {/* Lista */}
+          <div className="selector-options">
             {filteredCategories.length === 0 ? (
-              <div className={styles.noResults}>
-                {searchTerm ? '🔍 Nenhuma categoria encontrada' : '💫 Nenhuma categoria disponível'}
+              <div className="selector-empty">
+                <p>Nenhuma categoria encontrada</p>
               </div>
             ) : (
-              filteredCategories.map(category => {
-                const Icon = LucideIcons[category.icon];
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    className={`${styles.option} ${value === category.id ? styles.selected : ''}`}
-                    onClick={() => handleSelect(category)}
-                  >
-                    <div 
-                      className={styles.optionIcon}
-                      style={{ color: category.color }}
-                    >
-                      {Icon && <Icon size={20} />}
-                    </div>
-                    <div className={styles.optionContent}>
-                      <div className={styles.optionName}>{category.name}</div>
-                      {category.description && (
-                        <div className={styles.optionDesc}>{category.description}</div>
-                      )}
-                    </div>
-                    {value === category.id && (
-                      <div className={styles.checkmark}>✓</div>
+              filteredCategories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleSelect(category)}
+                  className={`selector-option ${
+                    selectedCategory?.id === category.id ? 'selected' : ''
+                  }`}
+                >
+                  <div
+                    className="option-color"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <div className="option-content">
+                    <div className="option-name">{category.name}</div>
+                    {category.description && (
+                      <div className="option-description">
+                        {category.description}
+                      </div>
                     )}
-                  </button>
-                );
-              })
+                  </div>
+                  {selectedCategory?.id === category.id && (
+                    <div className="option-checkmark">✓</div>
+                  )}
+                </button>
+              ))
             )}
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default CategorySelector;
+}

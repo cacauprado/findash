@@ -1,262 +1,325 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  X,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
 import { AVAILABLE_ICONS, COLOR_PALETTE } from '@/utils/defaultCategories';
-import * as LucideIcons from 'lucide-react';
-import styles from './CategoryManager.module.css';
+import IconPicker from './IconPicker';
+import ColorPicker from './ColorPicker';
+import './CategoryForm.css';
 
-const CategoryForm = ({ 
-  initialData = null, 
-  onSuccess = null, 
-  onCancel = null 
-}) => {
-  const { createCategory, updateCategory, isLoading } = useCategories();
+/**
+ * 📝 Formulário para criar/editar categorias
+ * @param {Object} props
+ * @param {Object} props.category - Categoria para editar (undefined para novo)
+ * @param {Function} props.onClose - Callback ao fechar
+ * @param {Function} props.onSuccess - Callback ao sucesso
+ */
+export default function CategoryForm({ category, onClose, onSuccess }) {
+  // Estado do formulário
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     color: '#FF6B6B',
-    icon: 'utensils',
+    icon: 'tag',
   });
-  const [error, setError] = useState(null);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showIconPicker, setShowIconPicker] = useState(false);
 
+  // Estados de controle
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const { createCategory, updateCategory } = useCategories();
+  const isEditing = !!category;
+
+  // Inicializar com dados da categoria
   useEffect(() => {
-    if (initialData) {
+    if (category) {
       setFormData({
-        name: initialData.name,
-        description: initialData.description || '',
-        color: initialData.color,
-        icon: initialData.icon,
+        name: category.name,
+        description: category.description || '',
+        color: category.color,
+        icon: category.icon,
       });
     }
-  }, [initialData]);
+  }, [category]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setError(null);
+  /**
+   * 🔐 Validar formulário
+   */
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    } else if (formData.name.length > 50) {
+      newErrors.name = 'Nome máximo 50 caracteres';
+    }
+
+    if (formData.description && formData.description.length > 200) {
+      newErrors.description = 'Descrição máximo 200 caracteres';
+    }
+
+    if (!formData.color || !/^#[0-9A-F]{6}$/i.test(formData.color)) {
+      newErrors.color = 'Cor inválida';
+    }
+
+    if (!formData.icon) {
+      newErrors.icon = 'Ícone obrigatório';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleColorSelect = (color) => {
-    setFormData(prev => ({
-      ...prev,
-      color
-    }));
-    setShowColorPicker(false);
-  };
-
-  const handleIconSelect = (icon) => {
-    setFormData(prev => ({
-      ...prev,
-      icon
-    }));
-    setShowIconPicker(false);
-  };
-
+  /**
+   * 💾 Submeter formulário
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    if (!validateForm()) {
+      setError('Verifique os campos em vermelho');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false);
+
     try {
-      setError(null);
-      
-      if (!formData.name.trim()) {
-        throw new Error('Nome da categoria é obrigatório');
+      if (isEditing) {
+        await updateCategory(category.id, formData);
+      } else {
+        await createCategory(formData);
       }
 
-      if (initialData?.id) {
-        await updateCategory(initialData.id, {
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          color: formData.color,
-          icon: formData.icon,
-        });
-      } else {
-        await createCategory({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          color: formData.color,
-          icon: formData.icon,
-        });
-      }
+      setSuccess(true);
       
-      setFormData({
-        name: '',
-        description: '',
-        color: '#FF6B6B',
-        icon: 'utensils',
-      });
-      
-      onSuccess?.();
+      setTimeout(() => {
+        onSuccess?.();
+        onClose?.();
+      }, 1000);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Erro ao salvar categoria');
+      console.error('❌ Erro:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const IconComponent = LucideIcons[formData.icon];
+  /**
+   * 📝 Atualizar campo
+   */
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Limpar erro do campo
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
+  };
 
   return (
-    <div className={styles.formContainer}>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <h3>{initialData ? 'Editar Categoria' : 'Nova Categoria'}</h3>
-        
-        {/* Nome */}
-        <div className={styles.formGroup}>
-          <label htmlFor="name">Nome *</label>
-          <input
-            id="name"
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="Ex: Alimentação"
-            maxLength={50}
-            className={styles.input}
+    <div className="category-form-overlay">
+      <div className="category-form-container">
+        {/* Header */}
+        <div className="category-form-header">
+          <h2>{isEditing ? '✏️ Editar Categoria' : '➕ Nova Categoria'}</h2>
+          <button
+            onClick={onClose}
+            className="category-form-close"
             disabled={isLoading}
-          />
-          <span className={styles.counter}>{formData.name.length}/50</span>
+            aria-label="Fechar"
+          >
+            <X size={24} />
+          </button>
         </div>
 
-        {/* Descrição */}
-        <div className={styles.formGroup}>
-          <label htmlFor="description">Descrição</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="Ex: Comida, restaurantes, supermercado"
-            rows="3"
-            className={styles.textarea}
-            disabled={isLoading}
-          />
-        </div>
-
-        {/* Cor e Ícone */}
-        <div className={styles.row}>
-          {/* Color Picker */}
-          <div className={styles.formGroup}>
-            <label>Cor</label>
-            <div className={styles.colorPickerWrapper}>
-              <button
-                type="button"
-                className={styles.colorButton}
-                style={{ backgroundColor: formData.color }}
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                title={formData.color}
-              />
-              <span className={styles.colorValue}>{formData.color}</span>
-            </div>
-            
-            {showColorPicker && (
-              <div className={styles.colorPickerDropdown}>
-                <div className={styles.colorGrid}>
-                  {COLOR_PALETTE.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={styles.colorOption}
-                      style={{ backgroundColor: color }}
-                      onClick={() => handleColorSelect(color)}
-                      title={color}
-                      aria-label={`Select color ${color}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Icon Picker */}
-          <div className={styles.formGroup}>
-            <label>Ícone</label>
-            <div className={styles.iconPickerWrapper}>
-              <button
-                type="button"
-                className={styles.iconButton}
-                onClick={() => setShowIconPicker(!showIconPicker)}
-              >
-                {IconComponent && <IconComponent size={20} />}
-                <span>{formData.icon}</span>
-              </button>
-            </div>
-
-            {showIconPicker && (
-              <div className={styles.iconPickerDropdown}>
-                <div className={styles.iconGrid}>
-                  {AVAILABLE_ICONS.map((icon) => {
-                    const Icon = LucideIcons[icon];
-                    return (
-                      <button
-                        key={icon}
-                        type="button"
-                        className={styles.iconOption}
-                        onClick={() => handleIconSelect(icon)}
-                        title={icon}
-                        aria-label={`Select icon ${icon}`}
-                      >
-                        {Icon && <Icon size={20} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Pré-visualização */}
-        <div className={styles.preview}>
-          <div className={styles.previewLabel}>Pré-visualização:</div>
-          <div className={styles.previewCard} style={{ borderLeftColor: formData.color }}>
-            {IconComponent && (
-              <div className={styles.previewIcon} style={{ color: formData.color }}>
-                <IconComponent size={24} />
-              </div>
-            )}
-            <div className={styles.previewContent}>
-              <div className={styles.previewName}>{formData.name || 'Nome'}</div>
-              <div className={styles.previewDesc}>
-                {formData.description || 'Descrição'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Erro */}
-        {error && (
-          <div className={styles.error}>
-            <span>❌</span> {error}
+        {/* Mensagens de sucesso/erro */}
+        {success && (
+          <div className="category-form-message success">
+            <CheckCircle size={20} />
+            <span>{isEditing ? 'Categoria atualizada!' : 'Categoria criada!'}</span>
           </div>
         )}
 
-        {/* Botões */}
-        <div className={styles.actions}>
-          <button
-            type="submit"
-            className={styles.btnPrimary}
-            disabled={isLoading || !formData.name.trim()}
-          >
-            {isLoading ? '⏳ Salvando...' : initialData ? 'Atualizar' : 'Criar'}
-          </button>
-          {onCancel && (
+        {error && (
+          <div className="category-form-message error">
+            <AlertCircle size={20} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Formulário */}
+        <form onSubmit={handleSubmit} className="category-form">
+          {/* Campo: Nome */}
+          <div className="form-group">
+            <label htmlFor="name">Nome da Categoria *</label>
+            <input
+              id="name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder="Ex: Alimentação"
+              maxLength={50}
+              disabled={isLoading}
+              className={errors.name ? 'error' : ''}
+            />
+            {errors.name && (
+              <span className="field-error">{errors.name}</span>
+            )}
+            <span className="field-counter">
+              {formData.name.length}/50
+            </span>
+          </div>
+
+          {/* Campo: Descrição */}
+          <div className="form-group">
+            <label htmlFor="description">Descrição</label>
+            <textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Descreva a categoria (opcional)"
+              maxLength={200}
+              disabled={isLoading}
+              rows={3}
+              className={errors.description ? 'error' : ''}
+            />
+            {errors.description && (
+              <span className="field-error">{errors.description}</span>
+            )}
+            <span className="field-counter">
+              {formData.description.length}/200
+            </span>
+          </div>
+
+          {/* Divisor */}
+          <div className="form-divider" />
+
+          {/* Row: Cor e Ícone */}
+          <div className="form-row">
+            {/* Campo: Cor */}
+            <div className="form-group">
+              <label>Cor *</label>
+              <button
+                type="button"
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="color-picker-button"
+                disabled={isLoading}
+                style={{
+                  backgroundColor: formData.color,
+                  borderColor: formData.color,
+                }}
+                title={formData.color}
+              >
+                <span>{formData.color}</span>
+              </button>
+              {showColorPicker && (
+                <ColorPicker
+                  value={formData.color}
+                  onChange={(color) => {
+                    handleChange('color', color);
+                    setShowColorPicker(false);
+                  }}
+                  palette={COLOR_PALETTE}
+                />
+              )}
+              {errors.color && (
+                <span className="field-error">{errors.color}</span>
+              )}
+            </div>
+
+            {/* Campo: Ícone */}
+            <div className="form-group">
+              <label>Ícone *</label>
+              <button
+                type="button"
+                onClick={() => setShowIconPicker(!showIconPicker)}
+                className="icon-picker-button"
+                disabled={isLoading}
+                title="Clique para escolher um ícone"
+              >
+                <span className="icon-preview">●</span>
+                <span className="icon-name">{formData.icon}</span>
+              </button>
+              {showIconPicker && (
+                <IconPicker
+                  value={formData.icon}
+                  onChange={(icon) => {
+                    handleChange('icon', icon);
+                    setShowIconPicker(false);
+                  }}
+                  icons={AVAILABLE_ICONS}
+                />
+              )}
+              {errors.icon && (
+                <span className="field-error">{errors.icon}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="form-preview">
+            <div
+              className="preview-card"
+              style={{ backgroundColor: formData.color + '20' }}
+            >
+              <div
+                className="preview-color-dot"
+                style={{ backgroundColor: formData.color }}
+              />
+              <div className="preview-content">
+                <div className="preview-name">{formData.name || 'Nova Categoria'}</div>
+                <div className="preview-description">
+                  {formData.description || 'Sem descrição'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Botões de ação */}
+          <div className="form-actions">
             <button
               type="button"
-              className={styles.btnSecondary}
-              onClick={onCancel}
+              onClick={onClose}
               disabled={isLoading}
+              className="btn btn-secondary"
             >
               Cancelar
             </button>
-          )}
-        </div>
-      </form>
+            <button
+              type="submit"
+              disabled={isLoading || success}
+              className="btn btn-primary"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="spinner" />
+                  {isEditing ? 'Salvando...' : 'Criando...'}
+                </>
+              ) : (
+                <>{isEditing ? '✏️ Atualizar' : '✅ Criar'}</>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
-};
-
-export default CategoryForm;
+}

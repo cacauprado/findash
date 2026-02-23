@@ -1,0 +1,274 @@
+/* 🎴 CategoryCard Styles */
+
+.card {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.card.dragging {
+  opacity: 0.5;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Drag Handle */
+.dragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: #ccc;
+  transition: color 0.2s ease;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.card:hover .dragHandle {
+  color: #999;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.description {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Metadata */
+.metadata {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #666;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.actionButton {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.actionButton:hover {
+  border-color: #007bff;
+  color: #007bff;
+  background: #f0f8ff;
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
+
+.deleteButton:hover {
+  border-color: #f44;
+  color: #f44;
+  background: #fee;
+}
+
+/* Delete Confirmation Modal */
+.confirmModal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirmContent {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 320px;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirmTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.confirmMessage {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.confirmHint {
+  font-size: 12px;
+  color: #999;
+  display: block;
+  margin-top: 8px;
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.confirmCancel,
+.confirmDelete {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmCancel {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.confirmCancel:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.confirmDelete {
+  background: #f44;
+  color: white;
+}
+
+.confirmDelete:hover:not(:disabled) {
+  background: #d33;
+}
+
+.confirmCancel:disabled,
+.confirmDelete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .dragHandle {
+    order: 1;
+  }
+
+  .content {
+    order: 2;
+    flex-basis: calc(100% - 48px);
+  }
+
+  .actions {
+    order: 3;
+  }
+
+  .metadata {
+    flex-basis: 100%;
+    padding-left: 40px;
+  }
+}

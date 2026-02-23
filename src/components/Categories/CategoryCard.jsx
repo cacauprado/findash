@@ -1,88 +1,134 @@
 'use client';
 
-import { Edit2, Trash2 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import styles from './CategoryManager.module.css';
+import {
+  Edit2,
+  Trash2,
+  Loader2,
+  ChevronRight,
+} from 'lucide-react';
+import './CategoryCard.css';
 
-const CategoryCard = ({ 
-  category, 
-  onEdit = null, 
-  onDelete = null,
-  editable = true 
-}) => {
-  const IconComponent = LucideIcons[category.icon];
-
-  const handleDeleteClick = () => {
-    if (window.confirm(`Tem certeza que deseja deletar "${category.name}"?`)) {
-      onDelete?.();
-    }
-  };
-
+/**
+ * 🎨 Card individual de categoria
+ * @param {Object} props
+ * @param {Object} props.category - Dados da categoria
+ * @param {Function} props.onEdit - Callback de edição
+ * @param {Function} props.onDelete - Callback de deleção
+ * @param {boolean} props.isDeleting - Estado de deleção
+ * @param {boolean} props.isSelectable - Modo seleção
+ */
+export default function CategoryCard({
+  category,
+  onEdit,
+  onDelete,
+  isDeleting = false,
+  isSelectable = false,
+}) {
   return (
-    <div className={styles.card}>
-      {/* Header com cor */}
-      <div 
-        className={styles.cardHeader}
-        style={{ backgroundColor: category.color }}
-      >
-        <div className={styles.cardIcon}>
-          {IconComponent && <IconComponent size={32} />}
-        </div>
-      </div>
+    <div className="category-card">
+      {/* Background color accent */}
+      <div
+        className="category-card-accent"
+        style={{ backgroundColor: category.color + '20' }}
+      />
 
-      {/* Conteúdo */}
-      <div className={styles.cardContent}>
-        <h4 className={styles.cardTitle}>{category.name}</h4>
-        
+      {/* Conteúdo principal */}
+      <div className="category-card-content">
+        {/* Cabeçalho */}
+        <div className="category-card-header">
+          {/* Indicador de cor */}
+          <div
+            className="category-card-color-indicator"
+            style={{ backgroundColor: category.color }}
+            title={category.color}
+          />
+
+          {/* Título */}
+          <h3 className="category-card-title">{category.name}</h3>
+
+          {/* Badge (se houver) */}
+          {category.isDefault && (
+            <span className="category-badge">Padrão</span>
+          )}
+        </div>
+
+        {/* Descrição */}
         {category.description && (
-          <p className={styles.cardDescription}>{category.description}</p>
+          <p className="category-card-description">
+            {category.description}
+          </p>
         )}
 
-        {/* Metadata */}
-        <div className={styles.cardMeta}>
-          <div className={styles.metaItem}>
-            <span className={styles.metaLabel}>Cor:</span>
-            <div className={styles.colorBadge} style={{ backgroundColor: category.color }}>
-              {category.color}
-            </div>
+        {/* Informações meta */}
+        <div className="category-card-meta">
+          {/* Ícone */}
+          <div className="meta-item">
+            <span className="meta-label">Ícone:</span>
+            <span className="meta-value">{category.icon}</span>
           </div>
-          
+
+          {/* Transações (se tiver) */}
           {category.metadata?.totalTransactions > 0 && (
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Transações:</span>
-              <span className={styles.metaValue}>{category.metadata.totalTransactions}</span>
+            <div className="meta-item">
+              <span className="meta-label">Transações:</span>
+              <span className="meta-value meta-highlight">
+                {category.metadata.totalTransactions}
+              </span>
             </div>
           )}
         </div>
+
+        {/* Total gasto (se tiver) */}
+        {category.metadata?.totalAmount > 0 && (
+          <div className="category-card-total">
+            <span className="total-label">Total:</span>
+            <span className="total-value">
+              R$ {(category.metadata.totalAmount).toFixed(2)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Ações */}
-      {editable && (
-        <div className={styles.cardActions}>
-          {onEdit && (
+      <div className="category-card-actions">
+        {isSelectable && (
+          <div className="action-indicator">
+            <ChevronRight size={18} />
+          </div>
+        )}
+
+        {!isSelectable && (
+          <>
             <button
-              className={styles.actionBtn}
-              onClick={onEdit}
+              onClick={() => onEdit(category)}
+              className="card-action-btn edit"
               title="Editar categoria"
-              aria-label="Editar"
+              aria-label="Editar categoria"
             >
               <Edit2 size={18} />
             </button>
-          )}
-          {onDelete && (
+
             <button
-              className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-              onClick={handleDeleteClick}
+              onClick={() => onDelete()}
+              className="card-action-btn delete"
+              disabled={isDeleting}
               title="Deletar categoria"
-              aria-label="Deletar"
+              aria-label="Deletar categoria"
             >
-              <Trash2 size={18} />
+              {isDeleting ? (
+                <Loader2 size={18} className="spinner" />
+              ) : (
+                <Trash2 size={18} />
+              )}
             </button>
-          )}
-        </div>
+          </>
+        )}
+      </div>
+
+      {/* Overlay de seleção */}
+      {isSelectable && (
+        <div className="category-card-overlay" />
       )}
     </div>
   );
-};
-
-export default CategoryCard;
+}
